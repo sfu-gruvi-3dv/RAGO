@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 from easydict import EasyDict as edict
 import model.utils as utils
-from model.rago_model import rago as net
+from model.RAGO import rago as net
 from model.loss import compute_losses
 from time import time
 from model.metrics import compare_rot_graph_iter
@@ -36,75 +36,7 @@ def test(model, test_ds):
                     else:
                         total_rot_err += (aligned_rotation_err)
                 
-                total_loss += loss["total"]"""Train the model"""
-
-from model.utils import quaternion2rot
-import torch
-
-import test
-import torch.optim as optim
-from tqdm import tqdm
-import model.utils as utils
-from model.rago_model import rago as net
-from model.loss import compute_losses
-
-def train(model, train_ds, optimizer, scheduler, epoch):
-    torch.cuda.empty_cache()
-    model.train()
-
-    with tqdm(total=len(train_ds)) as t:
-        for i, data_batch in enumerate(train_ds):
-            # move to GPU if available
-            data_batch = data_batch.cuda() 
-            if data_batch.edge_attr.shape[0] > 600000:
-                t.update()
-                continue
-            data_batch = utils.random_sample_subgraph_from_data_batch_rotation(data_batch, ratio=0.8)
-            init_rot = None
-            data_batch.edge_attr = quaternion2rot(data_batch.edge_attr)
-            data_batch.gt_rot = quaternion2rot(data_batch.gt_rot)
-
-            output_batch = model(data_batch, init_rot, 3, 1, 4)
-            loss = compute_losses(data_batch, output_batch)
-
-            optimizer.zero_grad()
-            loss["total"].backward()
-            optimizer.step()
-            t.update()
-
-    if  epoch > 100:
-        scheduler.step()
-
-def train_and_evaluate(model, train_ds, eval_ds,test_ds, optimizer, scheduler):
-    for epoch in range(1000000):
-        train(model, train_ds, optimizer, scheduler)
-        tloss = eval(model, eval_ds)
-        # save model
-        if epoch % 100 == 0:
-            test(model, test_ds)
-
-def main(config=None):
-    model = net().cuda()
-
-    train_ds, eval_ds,test_ds = None, None,None
-
-    # add regulizer to weights and bias
-    param_groups = [
-        {"params": utils.bias_parameters(model)},
-        {"params": utils.weight_parameters(model), "weight_decay": 1e-6},
-    ]
-    
-    optimizer = optim.AdamW(param_groups, lr=0.0001,
-                                                   betas=(0.9, 0.999), eps=1e-7)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.999)
-
-    train_and_evaluate(model, train_ds, eval_ds,test_ds, optimizer, scheduler)
-
-
-if __name__ == '__main__':
-
-    main()
-
+                total_loss += loss["total"]
                 t.update()
     for i,err in enumerate(total_rot_err):
         print(".2f .2f" % (err[0],err[1]))
