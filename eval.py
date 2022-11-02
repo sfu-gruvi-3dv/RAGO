@@ -16,7 +16,7 @@ from torch.autograd import Variable
 from tqdm import tqdm
 from easydict import EasyDict as edict
 import model.utils as utils
-from model.rago_model import rago as net
+from model.RAGO import rago as net
 from model.loss import compute_losses
 from time import time
 
