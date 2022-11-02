@@ -11,7 +11,7 @@ import model.utils as qua_op
 from liegroups.torch.so3 import SO3Matrix as so3m
 import h5py
 import hdf5storage
-from core_model.quat_spt import *
+from model.quat_spt import *
 from tqdm import tqdm
 class graph_object:
     def __init__(self, cc, egs, bundle, valid="cc") -> None:
