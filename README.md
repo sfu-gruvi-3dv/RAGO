@@ -3,4 +3,4 @@ This is the official repo for the CVPR 2022 paper "RAGO: Recurrent Graph Optimiz
 
 The code will releases soom.
 
-Please contact `lihengl [at] sfu [dot] ca` if you need any help.
+Please contact `rago_help [at] hengli [dot] me || lihengl [at] sfu [dot] ca` if you need any help.
