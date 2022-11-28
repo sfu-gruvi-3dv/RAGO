@@ -5,7 +5,7 @@ The code will releases soom.
 
 If you find our code or paper useful, please cite:
 ```
-@InProceedings{RAGO2022,
+@InProceedings{Li2022RAGO,
     author    = {Li, Heng and Cui, Zhaopeng and Liu, Shuaicheng and Tan, Ping},
     title     = {RAGO: Recurrent Graph Optimizer for Multiple Rotation Averaging},
     booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
