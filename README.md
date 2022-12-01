@@ -15,4 +15,4 @@ If you find our code or paper useful, please cite:
 }
 ```
 
-Please contact `rago_help [at] hengli [dot] me || lihengl [at] sfu [dot] ca` if you need any help.
+Please contact `rago_help [at] hengli [dot] me || lihengl [at] sfu [dot] ca (Deprecated soon)` if you need any help.
