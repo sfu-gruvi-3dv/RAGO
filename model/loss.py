@@ -6,7 +6,7 @@ def seq_edge_loss(edge_rotations,edge_attr, gt_rot, edge_index, gamma=0.8):
     loss = 0
     seq_num = len(edge_rotations)
     losses = []
-    gt_edge_quat = utils.rel_rot_from_global(gt_rot, edge_index)
+    gt_edge_quat = utils.edge_model_rot(gt_rot, edge_index)
     gt_edge_quat_inv = gt_edge_quat.transpose(1,2)
     gt_gap_rot = torch.bmm(gt_edge_quat_inv, edge_attr)
     for i, pred_rot in enumerate(edge_rotations):
@@ -22,11 +22,11 @@ def seq_node_loss(node_rotations, edge_attr, edge_index, gt_rot, gamma=0.8):
     seqs = []
 
     seq_num = len(node_rotations)
-    gt_rel_rot = utils.rel_rot_from_global(gt_rot, edge_index)
+    gt_rel_rot = utils.edge_model_rot(gt_rot, edge_index)
     gt_rel_rot_inv = gt_rel_rot.transpose(1,2)
     for i, pred_rot in enumerate(node_rotations):
         now_coff = (gamma) ** (seq_num - 1 - i)
-        pred_rel_rot = utils.rel_rot_from_global(pred_rot.view(-1,3,3), edge_index)
+        pred_rel_rot = utils.edge_model_rot(pred_rot.view(-1,3,3), edge_index)
         edge_loss =  (pred_rel_rot - gt_rel_rot).abs()
         edge_loss = (edge_loss.mean()) * now_coff
         loss += edge_loss

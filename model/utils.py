@@ -2,14 +2,14 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from model.utils import edge_model_rot
+
 from model import tools as tools
 from scipy.sparse import csr_matrix
 from torch_scatter import scatter
 from scipy.sparse.csgraph import minimum_spanning_tree, shortest_path
-def rel_rot_from_global(node, edge_index):
+def edge_model_rot(x, edge_index):
     row, col = edge_index
-    ri, rj = node[row], node[col]
+    ri, rj = x[row], x[col]
     rij = torch.bmm(ri, rj.transpose(1,2))
     return rij
 
