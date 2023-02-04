@@ -31,14 +31,14 @@ class rago(nn.Module):
             camera_rotation = F.normalize(camera_rotation, dim=1, p=2)
             camera_rotation = utils.quaternion2rot(camera_rotation)
             camera_rotation = camera_rotation.detach()
-        camera_init = camera_rotation.detach()
+            init_rot = camera_rotation.detach()
         rect_edges = torch.zeros(edge_attr.shape[0],6).to(device)
 
         node_feat, edge_feat = self.mpnn_feat(init_rot, edge_index, edge_attr)
         node_state, edge_state = self.mpnn_state(init_rot, edge_index, edge_attr)
         node_state, edge_state = torch.tanh(node_state), torch.tanh(edge_state)
         
-        return camera_init, rect_edges, node_feat, edge_feat, node_state, edge_state
+        return init_rot, rect_edges, node_feat, edge_feat, node_state, edge_state
     
     def compute_graph_cost(self, node_rotations, edge_rotations, edge_attr, edge_index):
         # sra node cost
