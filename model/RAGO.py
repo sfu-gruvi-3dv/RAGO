@@ -13,8 +13,8 @@ class rago(nn.Module):
         self.mpnn_feat = MPNN_1Conv(9,9,48,48)
         self.mpnn_state = MPNN_1Conv(9,9,48,48)
         
-        self.mpnn_edge_cost = MPNN_3Conv(9,9,48,48)
-        self.mpnn_node_cost = MPNN_3Conv(9,9,48,48)
+        self.mpnn_edge_cost = MPNN_3Conv(9+9+48,9+9+48,48,48)
+        self.mpnn_node_cost = MPNN_3Conv(9+9+48,9+9+48,48,48)
         
         self.edge_fusion = MLP(6,[3],48+48, 48, 48)
         self.edge_gru = MLPGRU(48+48, 48)
@@ -32,15 +32,16 @@ class rago(nn.Module):
             camera_rotation = utils.quaternion2rot(camera_rotation)
             camera_rotation = camera_rotation.detach()
             init_rot = camera_rotation.detach()
-        rect_edges = torch.zeros(edge_attr.shape[0],6).to(device)
-        rect_edges[:,0] = 1.0
-        rect_edges[:,4] = 1.0
+        rect_edges = torch.rand(edge_attr.shape[0],6).to(device)
+        # rect_edges[:,0] = 1.0
+        # rect_edges[:,4] = 1.0
 
         node_feat, edge_feat = self.mpnn_feat(init_rot.view(-1,9), edge_attr.view(-1,9), edge_index)
         node_state, edge_state = self.mpnn_state(init_rot.view(-1,9), edge_attr.view(-1,9), edge_index)
+        node_feat, edge_feat = torch.relu(node_feat), torch.relu(edge_feat)
         node_state, edge_state = torch.tanh(node_state), torch.tanh(edge_state)
         
-        return init_rot, rect_edges, node_feat, edge_feat, node_state, edge_state
+        return init_rot.detach(), rect_edges.detach(), node_feat, edge_feat, node_state, edge_state
     
     def compute_graph_cost(self, node_rotations, edge_rotations, edge_attr, edge_index):
         # sra node cost
@@ -79,6 +80,8 @@ class rago(nn.Module):
                 
                 node_cost, edge_cost = self.compute_graph_cost(node_rotations, edge_rotations,
                                                       edge_attr, edge_index)
+                node_cost = torch.cat([node_feat,node_rotations.view(-1,9), node_cost], dim=-1)
+                edge_cost = torch.cat([edge_feat,utils.compute_rotation_matrix_from_ortho6d(edge_rotations).view(-1,9), edge_cost], dim=-1)
                 _, edge_cost_feat = self.mpnn_edge_cost(node_cost, edge_cost, edge_index)
                 edge_fusion_feat = self.edge_fusion(torch.cat([edge_cost_feat, edge_feat], dim=-1))
                 edge_fusion_feat = torch.cat([edge_fusion_feat, edge_feat], dim=-1)
@@ -87,7 +90,7 @@ class rago(nn.Module):
                 edge_state = torch.tanh(edge_state)
                 
                 delta_edge_refine = self.edge_updater(edge_state)
-                edge_rotations += delta_edge_refine
+                edge_rotations = edge_rotations + delta_edge_refine
                 ret["rect_edges"].append(edge_rotations)
         
             for ino in range(tn):
@@ -96,6 +99,8 @@ class rago(nn.Module):
                 
                 node_cost, edge_cost = self.compute_graph_cost(node_rotations, edge_rotations,
                                                       edge_attr, edge_index)
+                node_cost = torch.cat([node_feat,node_rotations.view(-1,9), node_cost], dim=-1)
+                edge_cost = torch.cat([edge_feat,utils.compute_rotation_matrix_from_ortho6d(edge_rotations).view(-1,9), edge_cost], dim=-1).detach()
                 node_cost_feat,_ = self.mpnn_node_cost(node_cost, edge_cost, edge_index)
                 node_fusion_feat = self.node_fusion(torch.cat([node_cost_feat, node_feat], dim=-1))
                 node_fusion_feat = torch.cat([node_fusion_feat, node_feat], dim=-1)

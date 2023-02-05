@@ -13,9 +13,10 @@ def seq_edge_loss(edge_rotations,edge_attr, gt_rot, edge_index, gamma=0.8):
         now_coff = gamma ** (seq_num - i - 1)
         edge_refine = utils.compute_rotation_matrix_from_ortho6d(pred_rot)
         edge_loss = (edge_refine - gt_gap_rot).abs()
-        edge_loss = (edge_loss).mean()
+        edge_loss = (edge_loss).sum()
+        losses.append((edge_loss).sum().item())
         loss += now_coff * edge_loss
-    return loss
+    return loss,losses
 
 def seq_node_loss(node_rotations, edge_attr, edge_index, gt_rot, gamma=0.8):
     loss = 0
@@ -28,9 +29,10 @@ def seq_node_loss(node_rotations, edge_attr, edge_index, gt_rot, gamma=0.8):
         now_coff = (gamma) ** (seq_num - 1 - i)
         pred_rel_rot = utils.edge_model_rot(pred_rot.view(-1,3,3), edge_index)
         edge_loss =  (pred_rel_rot - gt_rel_rot).abs()
-        edge_loss = (edge_loss.mean()) * now_coff
+        seqs.append(edge_loss.sum().item())
+        edge_loss = (edge_loss.sum()) * now_coff
         loss += edge_loss
-    return loss
+    return loss, seqs
 
 def compute_losses(data_batch, output_batch):
     gt_rot = data_batch.gt_rot
@@ -40,7 +42,8 @@ def compute_losses(data_batch, output_batch):
     edge_attr = data_batch.edge_attr.view(-1,3,3)
     edge_index = data_batch.edge_index
     loss = {}
-    loss["edge"] = seq_edge_loss(edge_rotations, edge_attr, gt_rot, edge_index)
-    loss["node"] = seq_node_loss(node_rotations, edge_attr, edge_index, gt_rot)
+    loss["edge"], loss["edge_seqs"] = seq_edge_loss(edge_rotations, edge_attr, gt_rot, edge_index)
+    loss["node"], loss["node_seqs"] = seq_node_loss(node_rotations, edge_attr, edge_index, gt_rot)
     loss["total"] = loss["edge"] + loss["node"]
+    # loss["total"] =  loss["node"]
     return loss
